@@ -12,8 +12,9 @@ out_path = "C:/Users/"+osuser+"/Desktop/"
 # DO NOT EDIT THIS PATH
 user_path = "C:/Users/"+osuser+"/AppData/Roaming/Booktab/"
 
-swfrenderpath = "c:/Users/"+osuser+"/Desktop/SWFRender/"
+swfrenderpath = "C:/Users/"+osuser+"/Desktop/SWFRender/"
 swfrendercommand = swfrenderpath+"swfrender.exe -r 240 "
+swfpreviewcommand = swfrenderpath+"swfrender.exe -r 72 -p 1"
 ##########################################################################
 
 print("Booktab Image Downloader")
@@ -124,9 +125,26 @@ for file in os.listdir(out_path):
 print("Done.")
 
 swfrendered = 0
+print("\nRendering preview of each .swf file...")
+i=0
+while True:
+    if ".png" in os.listdir(out_path)[i] or ".jpg" in os.listdir(out_path)[i]:
+        pass
+    else:
+        os.system(swfpreviewcommand+" -o "+out_path+os.listdir(out_path)[i]+".png "+out_path+os.listdir(out_path)[i])
+        print("Rendering preview ("+os.listdir(out_path)[i]+") : "+str(swfrendered+1)+"/"+str(swfcount), end="\r")
+        swfrendered+=1
+    if swfrendered == swfcount:
+        break
+    else:
+        i+=1
+print("Done.")
+'''
+swfrendered = 0
 print("\nRendering files...\nNOTE: This action require several minutes, please wait...")
 for i in range(len(os.listdir(out_path))):
     os.system(swfrendercommand+out_path+os.listdir(out_path)[i])
-    print("Rendering "+str(swfrendered+1)+"/"+str(swfcount), end="\r")
+    print("Rendering: "+str(swfrendered+1)+"/"+str(swfcount), end="\r")
     swfrendered+=1
+'''
 
