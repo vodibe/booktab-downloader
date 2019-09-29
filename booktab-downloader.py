@@ -1,5 +1,6 @@
 import os
 import shutil
+import img2pdf
 ##########################################################################
 # CUSTOM SETTINGS: edit this BEFORE running the program.
 
@@ -15,6 +16,7 @@ user_path = "C:/Users/"+osuser+"/AppData/Roaming/Booktab/"
 swfrenderpath = "C:/Users/"+osuser+"/Desktop/SWFRender/"
 swfrendercommand = swfrenderpath+"swfrender.exe -r 240 "
 swfpreviewcommand = swfrenderpath+"swfrender.exe -r 72 -p 1"
+invalidimagesize = 5000
 ##########################################################################
 
 print("Booktab Image Downloader")
@@ -77,7 +79,7 @@ print("Selected book: "+book_list[int(codein)-1])
 print("Source directory: "+book_path)
 print("Destination directory: "+out_path)
 
-print("\nCopying files...")
+print("\nCopying files")
 swfcount = 0
 pdfcount = 0  
 for root, dirs, files in os.walk(book_path):
@@ -119,32 +121,86 @@ else:
 if pdfcount == 0:
     print("No PDFs have been found!")
 
-print("\nAdding .swf extension...")
+print("\nAdding .swf extension")
 for file in os.listdir(out_path):
-    shutil.move(out_path+file,out_path+file+".swf")
+    file = os.path.join(out_path, file)
+    if os.path.isfile(file):
+        shutil.move(file,file+".swf")
 print("Done.")
 
 swfrendered = 0
-print("\nRendering preview of each .swf file...")
-i=0
-while True:
-    if ".png" in os.listdir(out_path)[i] or ".jpg" in os.listdir(out_path)[i]:
+print("\nRendering preview of each swf file")
+
+for file in os.listdir(out_path):
+    file = os.path.join(out_path, file)
+    if ".png" in file or ".jpg" in file:
+        pass
+    elif os.path.isfile(file) == False:
         pass
     else:
-        os.system(swfpreviewcommand+" -o "+out_path+os.listdir(out_path)[i]+".png "+out_path+os.listdir(out_path)[i])
-        print("Rendering preview ("+os.listdir(out_path)[i]+") : "+str(swfrendered+1)+"/"+str(swfcount), end="\r")
+        print(str(swfrendered+1)+"/"+str(swfcount), end="\r")
+        os.system(swfpreviewcommand+" -o "+file+".png "+file)
         swfrendered+=1
-    if swfrendered == swfcount:
-        break
-    else:
-        i+=1
-print("Done.")
-'''
-swfrendered = 0
-print("\nRendering files...\nNOTE: This action require several minutes, please wait...")
-for i in range(len(os.listdir(out_path))):
-    os.system(swfrendercommand+out_path+os.listdir(out_path)[i])
-    print("Rendering: "+str(swfrendered+1)+"/"+str(swfcount), end="\r")
-    swfrendered+=1
-'''
 
+print("Done.")
+
+print("""\nGood! You're almost done! Now follow these steps:
+1. Open Booktab software, choose your book, then look at the order of all chapters.
+2. Rename swf files in order that the first one is 1.swf/a.swf (...).
+   Take a look at related png files.
+3. Do not delete png files. The program will do it for you.""")
+
+steptwo = "n"
+while steptwo != "k" and steptwo != "K":
+    steptwo = input("When you followed all these steps press K button: ")
+
+print("\nDeleting png files")
+for file in os.listdir(out_path):
+    file = os.path.join(out_path, file)
+    if ".png" in file or ".jpg" in file:
+        os.remove(file)
+print("Done.")
+
+swfrendered = 0 
+print("\nRendering files\nNOTE: This action require several minutes, please wait...")
+for file in os.listdir(out_path):
+    file = os.path.join(out_path, file)
+    if os.path.isfile(file):
+        print(str(swfrendered+1)+"/"+str(swfcount), end="\r")
+        os.system(swfrendercommand+" -o "+out_path+"page.png "+file)
+        swfrendered+=1
+print("Done.")
+
+print("\nDeleting invlid images")     # testare a parte
+for page in os.listdir(out_path):
+    page = os.path.join(out_path, page)
+    if os.path.isfile(page) and os.stat(page).st_size <= invalidimagesize:
+        os.remove(page)
+print("Done.")
+
+print("\nDeleting swf files...")
+for file in os.listdir(out_path):
+    file = os.path.join(out_path, file)
+    if ".swf" in file:
+        os.remove(file)
+print("Done.")
+
+print("\nMerging everything into single PDF")
+
+imagelist = []    
+for file in os.listdir(out_path):
+    file = os.path.join(out_path, file)
+    if os.path.isfile(file):
+        imagelist.append(file)
+    
+print("This action requires several minutes, please wait...")
+with open(out_path+book_list[int(codein)-1]+".pdf","wb") as doc:
+    doc.write(img2pdf.convert(imagelist))
+print("Done.")
+
+print("\nDeleting images")
+for i in range(len(imagelist)):
+    os.remove(imagelist[i])
+print("Done.")
+
+print("\nFinished! Check: "+out_path+book_list[int(codein)-1]+".pdf")
