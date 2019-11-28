@@ -1,6 +1,6 @@
-# HUB Young Downloader
-Scarica le immagini delle pagine dei tuoi libri dal software HUB Young.<br>
-Download books pages from HUB Young software.
+# Booktab Downloader
+Scarica i tuoi libri in formato PDF dal software Booktab.<br>
+Download PDF books from Booktab software.
 
 :it:
 
