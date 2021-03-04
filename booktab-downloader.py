@@ -1,11 +1,15 @@
 import os
 import shutil
+import getpass
 import img2pdf
+import subprocess
+from PIL import Image
+
 ##########################################################################
 # CUSTOM SETTINGS: edit this BEFORE running the program.
 
 # 1. Specify your operating system user name
-osuser = "user" # <-- edit this
+osuser = getpass.getuser()
 
 # 2. (OPTIONAL) Edit the output path.
 out_path = "C:/Users/"+osuser+"/Desktop/"
@@ -13,9 +17,29 @@ out_path = "C:/Users/"+osuser+"/Desktop/"
 # DO NOT EDIT THIS PATH
 user_path = "C:/Users/"+osuser+"/AppData/Roaming/Booktab/"
 
-swfrenderpath = "C:/Users/"+osuser+"/Desktop/SWFRender/"
-swfrendercommand = swfrenderpath+"swfrender.exe -r 240 "
-swfpreviewcommand = swfrenderpath+"swfrender.exe -r 72 -p 1"
+# Resolve swf path
+swfrenderpaths = [
+    "C:/Program Files (x86)/SWFTools/",
+    "C:/Users/"+osuser+"/Desktop/SWFRender/"
+]
+
+swfrenderpath = None
+
+for path in swfrenderpaths:
+    if (os.path.isfile(path + "swfrender.exe")):
+        swfrenderpath = path + "swfrender.exe"
+        break
+
+if not swfrenderpath:
+    print("ERROR: SWFTOOLS not installed.")
+    print("Please, download it from here http://www.swftools.org/swftools-2013-04-09-1007.exe and run as administrator")
+    print("In one of the following folders: ")
+    for path in swfrenderpaths:
+        print("  -" + path)
+    exit(1)
+
+swfrendercommand = ["-r", "240"]
+swfpreviewcommand =  ["-r", "72", "-p", "1"]
 invalidimagesize = 5000
 ##########################################################################
 
@@ -23,7 +47,7 @@ print("Booktab Image Downloader")
 print("(C) brearlycoffee.cf")
 
 # list all directories in path
-user_list = [dI for dI in os.listdir(user_path) if os.path.isdir(os.path.join(user_path,dI))]
+user_list = [dI for dI in os.listdir(user_path) if os.path.isdir(os.path.join(user_path,dI)) and "@" in dI]
 print("\n[User list - About",str(len(user_list)),"users found]")
 for i in range(len(user_list)):
     print(str(i+1)+" "+user_list[i])
@@ -31,7 +55,7 @@ for i in range(len(user_list)):
 notvalid = True
 while notvalid:
     codein = input('\nChoose user: ')
-    if (int(codein) >= 1) and (int(codein) <= len(user_list)):
+    if codein and (int(codein) >= 1) and (int(codein) <= len(user_list)):
         notvalid = False
     else:
         notvalid = True   
@@ -45,7 +69,7 @@ while notvalid:
 ############################################
 book_path = "C:\\Users\\"+osuser+"\\AppData\\Roaming\\Booktab\\"+str(user_list[int(codein)-1])
 
-book_list = [dI for dI in os.listdir(book_path) if os.path.isdir(os.path.join(book_path,dI))]
+book_list = [dI for dI in os.listdir(book_path) if os.path.isdir(os.path.join(book_path,dI)) and dI != "appstate" and dI != "demo0"]
 print("\n[Book list - About",str(len(book_list)),"books found]")
 for i in range(len(book_list)):
     print(str(i+1)+" "+book_list[i])
@@ -53,7 +77,7 @@ for i in range(len(book_list)):
 notvalid = True
 while notvalid:
     codein = input('\nChoose book to extract: ')
-    if (int(codein) >= 1) and (int(codein) <= len(book_list)):
+    if codein and (int(codein) >= 1) and (int(codein) <= len(book_list)):
         notvalid = False
     else:
         notvalid = True
@@ -73,7 +97,7 @@ try:
     os.mkdir(out_path)
 except OSError:
     print("ERROR: Unable to create directory or directory already exists!")
-    sys.exit(0)
+    exit(1)
 
 print("Selected book: "+book_list[int(codein)-1])
 print("Source directory: "+book_path)
@@ -97,7 +121,7 @@ for root, dirs, files in os.walk(book_path):
                 print(str(swfcount)+" copied files.", end="\r")
 if swfcount == 0:
     print("No valid files have been found!")
-    sys.exit(0)
+    exit(1)
 
 while True:                
     pdfchoice = input("\nDo you want to download any PDF documents? Y/N ")
@@ -133,13 +157,14 @@ print("\nRendering preview of each swf file")
 
 for file in os.listdir(out_path):
     file = os.path.join(out_path, file)
-    if ".png" in file or ".jpg" in file:
+    if file.endswith(".png") or file.endswith(".jpg"):
         pass
     elif os.path.isfile(file) == False:
         pass
     else:
         print(str(swfrendered+1)+"/"+str(swfcount), end="\r")
-        os.system(swfpreviewcommand+" -o "+file+".png "+file)
+        p = [swfrenderpath] + swfpreviewcommand + ["-o", file + ".png", file]
+        subprocess.Popen(p).wait()
         swfrendered+=1
 
 print("Done.")
@@ -157,7 +182,7 @@ while steptwo != "k" and steptwo != "K":
 print("\nDeleting png files")
 for file in os.listdir(out_path):
     file = os.path.join(out_path, file)
-    if ".png" in file or ".jpg" in file:
+    if file.endswith(".png") or file.endswith(".jpg"):
         os.remove(file)
 print("Done.")
 
@@ -167,7 +192,10 @@ for file in os.listdir(out_path):
     file = os.path.join(out_path, file)
     if os.path.isfile(file):
         print(str(swfrendered+1)+"/"+str(swfcount), end="\r")
-        os.system(swfrendercommand+" -o "+out_path+"page.png "+file)
+
+        p = [swfrenderpath] + swfrendercommand + ["-o", out_path + "page.png", file]
+        subprocess.Popen(p).wait()
+
         swfrendered+=1
 print("Done.")
 
@@ -192,7 +220,13 @@ for file in os.listdir(out_path):
     file = os.path.join(out_path, file)
     if os.path.isfile(file):
         imagelist.append(file)
-    
+
+for image in imagelist:
+    img = Image.open(image)
+    if img.mode == "RGBA":
+        img = img.convert("RGB")
+        img.save(image, "PNG")
+
 print("This action requires several minutes, please wait...")
 with open(out_path+book_list[int(codein)-1]+".pdf","wb") as doc:
     doc.write(img2pdf.convert(imagelist))

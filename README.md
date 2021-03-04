@@ -16,4 +16,5 @@ Booktab downloader è un programma scritto in Python che permette di estrarre le
 <ul>
   <li>Python 3.x &nbsp; &nbsp; https://www.python.org/downloads/</li>
   <li>Booktab (sezione "Precedenti versioni") https://booktab.it/download/</li>
+  <li>SWFTools http://www.swftools.org/swftools-2013-04-09-1007.exe (eseguire come amministratore)</li>
 </ul>
